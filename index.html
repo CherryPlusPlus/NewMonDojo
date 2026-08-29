@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New問道場</title>
+<style>
+  :root {
+    --color-bg: #f2f2f0;
+    --color-page-bg: #ececeb;
+    --color-surface: #ffffff;
+    --color-accent: #00a968;
+    --color-accent-dark: #00874f;
+    --color-border: #dcdcd8;
+    --color-choice-bg: #f7f7f2;
+    --color-correct: #2e7d32;
+    --color-correct-bg: #e8f5e9;
+    --color-wrong: #c62828;
+    --color-wrong-bg: #ffebee;
+    --color-text: #333333;
+    --color-text-sub: #999999;
+    --color-answer-label: #c0504d;
+    --radius: 4px;
+    --font: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body.dark-mode {
+    --color-bg: #1e1e22;
+    --color-page-bg: #17171a;
+    --color-surface: #26262b;
+    --color-accent: #2ecf8e;
+    --color-accent-dark: #56dba5;
+    --color-border: #3a3a40;
+    --color-choice-bg: #2e2e34;
+    --color-correct: #66bb6a;
+    --color-correct-bg: #1f3a22;
+    --color-wrong: #ef5350;
+    --color-wrong-bg: #3a1f1f;
+    --color-text: #e8e8ea;
+    --color-text-sub: #9a9aa0;
+    --color-answer-label: #e08a87;
+  }
+
+  body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-page-bg);
+    font-family: var(--font);
+    color: var(--color-text);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #app {
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 24px 24px 60px;
+    position: relative;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--color-text-sub);
+    margin-bottom: 20px;
+  }
+  .breadcrumb-home {
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--color-text-sub);
+  }
+  .breadcrumb-home:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--color-border);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .header-logo {
+    color: var(--color-accent);
+    font-size: 0.7em;
+    line-height: 1;
+  }
+
+  /* HOME画面ではタイトルを2倍サイズ・中央配置 */
+  .header.home-mode {
+    justify-content: center;
+  }
+
+  .header.home-mode .header-title {
+    font-size: 56px;
+    gap: 8px;
+    justify-content: center;
+    font-family: "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", "YuMincho", serif;
+    font-weight: 700;
+  }
+
+  .header.home-mode .header-logo {
+    font-size: 0.85em;
+  }
+
+  /* スマホ問題画面用の下部ラベル */
+  .mobile-choice-bar {
+    display: none;
+  }
+
+  /* HOME画面 */
+  .home-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 24px;
+  }
+
+  .set-list-heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    margin: 0 0 12px;
+  }
+
+  .set-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .set-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    background: var(--color-choice-bg);
+  }
+
+  .set-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+  }
+
+  .set-item label {
+    cursor: pointer;
+    flex: 1;
+  }
+  .set-item:not(.is-checked) label {
+    color: var(--color-text-sub);
+  }
+
+  .option-section {
+    border-top: 1px solid var(--color-border);
+    padding-top: 20px;
+    margin-bottom: 28px;
+  }
+  .option-heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-sub);
+    margin: 0 0 12px;
+  }
+  .option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+  }
+  .option-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+  }
+  .option-item label { cursor: pointer; }
+
+  .start-btn {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 14px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    background: rgb(255, 178, 0);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .start-btn:hover { background: rgb(230, 160, 0); }
+  .start-btn:disabled {
+    background: var(--color-border);
+    cursor: not-allowed;
+  }
+
+  .ai-disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--color-text-sub);
+    opacity: 0.7;
+    margin: 10px 0 0;
+  }
+
+  .stats-bar {
+    text-align: center;
+    font-size: 15px;
+    color: var(--color-text);
+    margin-bottom: 24px;
+  }
+  .stats-bar strong { font-weight: 700; }
+  .stats-bar .divider {
+    color: var(--color-border);
+    margin: 0 12px;
+  }
+
+  .question-meta {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 16px;
+  }
+
+  .question-text {
+    font-size: 16px;
+    line-height: 1.9;
+    margin: 0 0 28px;
+  }
+
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--color-choice-bg);
+    border: 1px solid var(--color-border);
+    padding: 24px;
+  }
+
+  .choice-item {
+    flex: 1 1 0;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+
+  .choice-label {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #b7b7b0;
+    background: var(--color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .choice-label:hover {
+    border-color: var(--color-accent);
+  }
+  .choice-label:active {
+    transform: scale(0.93);
+  }
+
+  .choice-value {
+    font-size: 18px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    user-select: none;
+  }
+  .choice-value.is-dimmed {
+    opacity: 0.35;
+  }
+
+  .choice-label:disabled,
+  .choice-value.is-disabled {
+    cursor: default;
+  }
+
+  .choice-item.is-correct .choice-label {
+    background: var(--color-correct);
+    border-color: var(--color-correct);
+    color: #fff;
+  }
+  .choice-item.is-correct .choice-value {
+    color: var(--color-correct);
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  .choice-item.is-wrong .choice-label {
+    background: var(--color-wrong);
+    border-color: var(--color-wrong);
+    color: #fff;
+  }
+  .choice-item.is-wrong .choice-value {
+    color: var(--color-wrong);
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  /* 正答表示エリア(問題選択画面の下に出現) */
+  .answer-panel {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: max-height 0.5s ease, opacity 0.4s ease, transform 0.4s ease, margin-top 0.5s ease;
+    margin-top: 0;
+  }
+  .answer-panel.is-open {
+    max-height: 2000px;
+    opacity: 1;
+    transform: translateY(0);
+    margin-top: 32px;
+  }
+
+  .answer-heading {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  .answer-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .answer-label {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-answer-label);
+  }
+  .answer-user-text {
+    font-size: 15px;
+    color: var(--color-text-sub);
+  }
+
+  .explanation-heading {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  .explanation-box {
+    background: var(--color-choice-bg);
+    border: 1px solid var(--color-border);
+    padding: 20px 24px;
+    font-size: 16px;
+    line-height: 2;
+    color: var(--color-text);
+  }
+
+  .panel-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  .next-btn {
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    background: rgb(255, 178, 0);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    max-width: 420px;
+  }
+  .next-btn:hover { background: rgb(230, 160, 0); }
+
+  .home-link-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    background: transparent;
+    color: var(--color-text-sub);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .home-link-btn:hover {
+    border-color: var(--color-text-sub);
+    color: var(--color-text);
+  }
+
+  /* 結果画面 */
+  .result-screen {
+    text-align: center;
+    padding: 50px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .result-label {
+    font-size: 15px;
+    color: var(--color-text-sub);
+    margin: 0;
+  }
+  .result-score {
+    font-size: 46px;
+    font-weight: 700;
+    margin: 14px 0 4px;
+  }
+  .result-sub {
+    color: var(--color-accent-dark);
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 32px;
+  }
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .retry-btn {
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    background: var(--color-accent);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .retry-btn:hover { background: var(--color-accent-dark); }
+
+  .hidden { display: none; }
+
+  /* 正誤演出(画面中央、背景への影響なし) */
+  .judge-flash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+  }
+  .judge-flash.is-active {
+    animation: flash-visibility 0.7s ease forwards;
+  }
+
+  @keyframes flash-visibility {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .judge-streak {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 6px 20px;
+    border-radius: 999px;
+    transform: translateY(10px) scale(0.8);
+    opacity: 0;
+  }
+  .judge-flash.is-active .judge-streak {
+    animation: streak-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes streak-pop {
+    0% { transform: translateY(10px) scale(0.7); opacity: 0; }
+    40% { transform: translateY(0) scale(1.1); opacity: 1; }
+    60% { transform: translateY(0) scale(0.97); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .judge-mark {
+    width: 140px;
+    height: 140px;
+    transform: scale(0.4);
+    opacity: 0;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+  }
+  .judge-flash.is-active .judge-mark {
+    animation: mark-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes mark-pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    40% { transform: scale(1.15); opacity: 1; }
+    60% { transform: scale(0.95); opacity: 1; }
+    80% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .judge-mark circle,
+  .judge-mark line {
+    fill: none;
+    stroke-linecap: round;
+  }
+  .judge-flash.correct .judge-mark circle {
+    stroke: var(--color-correct);
+    stroke-width: 10;
+  }
+  .judge-flash.wrong .judge-mark line {
+    stroke: var(--color-wrong);
+    stroke-width: 10;
+  }
+
+  /* スマホ対応 */
+  @media (max-width: 640px) {
+    #app { padding: 16px 16px 88px; }
+    .header-title { font-size: 20px; }
+    .header.home-mode .header-title { font-size: 40px; }
+    .choices {
+      flex-direction: column;
+      padding: 12px 16px;
+    }
+    .choice-item {
+      min-width: 0;
+      padding: 12px 4px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .choice-item:last-child { border-bottom: none; }
+
+    .mobile-choice-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 90;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: 100vw;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-choice-bar span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 72px;
+      font-size: 16px;
+      font-weight: 700;
+      border-right: 1px solid var(--color-border);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-choice-bar span:active {
+      background: var(--color-choice-bg);
+    }
+
+    .mobile-choice-bar span:last-child {
+      border-right: none;
+    }
+
+    .mobile-choice-bar.hidden {
+      display: none;
+    }
+
+    .judge-mark { width: 110px; height: 110px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="breadcrumb" id="breadcrumb">
+    <span class="breadcrumb-home" id="breadcrumb-home">HOME</span>
+  </div>
+
+  <div class="header">
+    <h1 class="header-title">
+      <span class="header-logo">◤</span>New問道場
+    </h1>
+  </div>
+
+  <!-- HOME画面 -->
+  <div id="home-screen">
+    <div class="home-card">
+      <p class="set-list-heading">問題選択</p>
+      <div class="set-list" id="set-list"></div>
+
+      <div class="option-section">
+        <p class="option-heading">オプション項目</p>
+        <div class="option-item">
+          <input type="checkbox" id="option-random" />
+          <label for="option-random">選択肢をランダムに並べ替える</label>
+        </div>
+        <div class="option-item" style="margin-top: 10px;">
+          <input type="checkbox" id="option-question-random" />
+          <label for="option-question-random">出題順をランダムに並び替える</label>
+        </div>
+      </div>
+
+      <div class="option-section">
+        <p class="option-heading">設定</p>
+        <div class="option-item">
+          <input type="checkbox" id="option-dark-mode" />
+          <label for="option-dark-mode">ダークモード</label>
+        </div>
+      </div>
+
+      <button class="start-btn" id="start-btn">出題開始</button>
+      <p class="ai-disclaimer">問題の作成はAIを使用しており、誤っている場合があります。ご注意ください。</p>
+    </div>
+  </div>
+
+  <!-- 問題画面 -->
+  <div id="quiz-container" class="hidden">
+    <div class="stats-bar">
+      正解数 <strong id="stat-correct">0</strong> / <strong id="stat-total">0</strong> 問中
+      <span class="divider">|</span>
+      正答率 <strong id="stat-rate">0.0%</strong>
+    </div>
+
+    <div id="quiz-screen">
+      <p class="question-meta" id="question-meta">第 1 問</p>
+      <p class="question-text" id="question-text"></p>
+
+      <div class="choices" id="choices-container"></div>
+    </div>
+
+    <div class="answer-panel" id="answer-panel">
+      <p class="answer-heading">正解:</p>
+      <div class="answer-row">
+        <span class="answer-label" id="answer-label"></span>
+        <span class="answer-user-text" id="answer-user-text"></span>
+      </div>
+
+      <p class="explanation-heading">解説:</p>
+      <div class="explanation-box" id="explanation-text"></div>
+
+      <div class="panel-actions">
+        <button class="next-btn" id="next-btn">次の問題へ</button>
+        <button class="home-link-btn" id="home-btn-explanation">HOMEへ戻る</button>
+      </div>
+    </div>
+
+    <div id="result-screen" class="hidden result-screen">
+      <p class="result-label">結果</p>
+      <p class="result-score" id="final-score"></p>
+      <p class="result-sub" id="final-sub"></p>
+      <div class="result-actions">
+        <button class="retry-btn" id="retry-btn">もう一度挑戦する</button>
+        <button class="home-link-btn" id="home-btn-result">HOMEへ戻る</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="mobile-choice-bar hidden" id="mobile-choice-bar" aria-hidden="true">
+  <span data-choice-index="0">ア</span>
+  <span data-choice-index="1">イ</span>
+  <span data-choice-index="2">ウ</span>
+  <span data-choice-index="3">エ</span>
+</div>
+
+<div class="judge-flash" id="judge-flash">
+  <span class="judge-streak" id="judge-streak" style="display:none;"></span>
+  <svg class="judge-mark" id="judge-mark-correct" viewBox="0 0 100 100" style="display:none;">
+    <circle cx="50" cy="50" r="38"/>
+  </svg>
+  <svg class="judge-mark" id="judge-mark-wrong" viewBox="0 0 100 100" style="display:none;">
+    <line x1="26" y1="26" x2="74" y2="74"/>
+    <line x1="74" y1="26" x2="26" y2="74"/>
+  </svg>
+</div>
+
+<script>
+// ------------------------------------------------------------
+// 問題セットデータ(サンプル)。本番ではここに問題集を追加する。
+// correctIndex は choices 配列の何番目が正解かを 0始まり で指定。
+// ------------------------------------------------------------
+const questionSets = [
+  {
+    id: 'sample',
+    name: 'サンプル問題集',
+    questions: [
+      {
+        question: "日本の首都はどこですか?",
+        choices: ["大阪", "東京", "京都", "名古屋"],
+        correctIndex: 1,
+        explanation: "日本の首都は東京都です。1868年に江戸から東京へと改称されました。"
+      },
+      {
+        question: "水の化学式はどれですか?",
+        choices: ["CO2", "NaCl", "H2O", "O2"],
+        correctIndex: 2,
+        explanation: "水は水素原子2個と酸素原子1個から構成されており、化学式は H2O です。"
+      },
+      {
+        question: "1年で最も日照時間が長い日を何と呼びますか?",
+        choices: ["夏至", "冬至", "春分", "秋分"],
+        correctIndex: 0,
+        explanation: "夏至は北半球で1年のうち最も昼が長くなる日で、6月21日頃にあたります。"
+      },
+      {
+        question: "地球から最も近い惑星はどれですか?",
+        choices: ["火星", "木星", "金星", "土星"],
+        correctIndex: 2,
+        explanation: "地球に最も近い惑星は金星です。地球のすぐ内側の軌道を公転しています。"
+      }
+    ]
+  },
+      {
+        id: 'civics',
+        name: '公共自習用問題集',
+        questions: [
+          {
+            question: "観念論の立場では、従来の「人間の認識は、外にある対象をそのまま写し取っている」という考え方を逆転させ、「人間の認識の枠組み（主観）が、対象を組み立てている」と主張した。この「対象が認識に従う」という考え方の具体的な説明として、最も適切なものはどれか。",
+            choices: ["人間は、客観的な世界をありのままに正しく認識することができる。", "人間は、自分が持っている認識のメガネを通してしか、世界を経験できない。", "人間の心はもともと「白紙（タブラ・ラサ）」であり、すべての知識は経験によって後から書き込まれる。", "人間の理性を正しく用いれば、神の存在や世界の果てなど、あらゆる真理を完全に証明できる。"],
+            correctIndex: 1,
+            explanation: "カントは「認識が対象に従う」という従来の考えを逆転させ、「対象（の認識）が主観の枠組みに従う」というコペルニクス的転回を唱えた。人間は生まれつき備わった認識の形式（時間・空間・カテゴリーなど）を通してしか世界を経験できない、というイが正解。アは素朴実在論、ウはロックの経験論（タブラ・ラサ）、エはカントが批判した独断的形而上学の立場。"
+          },
+          {
+            question: "カントが無条件に善であるとした、義務を義務として常に善を行おうとする意志を何というか。",
+            choices: ["善意志", "義務意志", "目的意志", "無条件意志"],
+            correctIndex: 0,
+            explanation: "カントは、結果に関係なく「善をなそうとする意志」そのものを無条件に善いものとし、これを善意志と呼んだ。"
+          },
+          {
+            question: "カントが重視した、結果的な適法性よりも、動機における道徳性を重視することを何というか。",
+            choices: ["動機説", "性善説", "悪人正機説", "黄金伝説"],
+            correctIndex: 0,
+            explanation: "カントは行為が法にかなっているか（適法性＝レガリテート）よりも、その行為がどのような動機・意志から発せられたか（道徳性＝モラリテート）を重んじた。これを動機説という。他の選択肢は無関係（性善説＝孟子、悪人正機説＝親鸞）。"
+          },
+          {
+            question: "カントが残した「汝の人格及びあらゆる他者の人格における人間性を、常に同時に目的として扱い、決して単に手段としてのみ扱わないように行動せよ。」という言葉を踏まえたうえで、カントの意図に最も合致する行動はいくつあるか。一つもない場合は0と答えること。\nア 自分は生まれつき目が見えないため、友人を進行方向を知るための手段として使い、そのたびにお礼を言っている。\nイ クラスの文化祭の出し物を決める際、最も効率よく準備が終わる一人の優秀な生徒のアイデアを採用し、他の生徒には作業の指示だけを出した。\nウ 企業が利益を上げるために、従業員を「利益を生み出すための歯車（労働力）」と割り切り、本人の健康や生活の幸せよりも、会社の売上目標を達成させることを最優先にして働かせた。\nエ コンビニで買い物をするとき、店員は「商品を会計してくれる人」だが、一人の人間として尊重し、敬意を持って敬語で接した。",
+            choices: ["0つ", "1つ", "2つ", "3つ"],
+            correctIndex: 2,
+            explanation: "ア：友人を手段として使いつつ、その都度感謝している→手段として使っても同時に人格として敬意を払っており、「単なる手段」にはしていない＝合致。イ：優秀な生徒の案だけ採用し他の生徒には指示のみ→他の生徒の意思や人格を考慮せず効率のためだけに従わせている＝違反。ウ：従業員を歯車として割り切り健康より売上優先＝典型的な「単なる手段」化＝違反。エ：店員を会計係として利用しつつ、一人の人間として敬意を持って接している＝合致。よって合致するのはア・エの2つ。"
+          },
+          {
+            question: "人間に道徳的な行為を命じる法則で、人間を道徳的な行為に導くものを何というか。",
+            choices: ["分配法則", "質量保存の法則", "道徳法則", "黄金法則"],
+            correctIndex: 2,
+            explanation: "人間に道徳的行為を命じる普遍的な法則を道徳法則という。"
+          },
+          {
+            question: "弁証法の身近な例として最もふさわしいものは次のうちどれか。",
+            choices: ["昨日は「カレーが食べたい（正）」と思い、今日は「ラーメンが食べたい（反）」と思ったので、間をとって「カレーラーメン（合）」を食べた。", "スマートフォンは最初、大画面化が進んだ（正）。しかし「大きすぎて持ちにくい（反）」という不満が出たため、現在は大画面のまま折りたたんで小さく持ち運べるスマホ（合）が登場した。", "勉強中に「スマホを見たい（正）」という誘惑と、「勉強に集中すべきだ（反）」という理性が戦い、最終的に「10分だけスマホを見る（合）」という妥協案に落ち着いた。", "会議でA案（正）とB案（反）が対立したため、お互いが一歩ずつ譲り合って、足して2で割ったような無難なC案（合）を新しく作った。"],
+            correctIndex: 1,
+            explanation: "弁証法（正・反・合＝アウフヘーベン）は、対立する二つの要素の良い面を活かしつつ、矛盾を高い次元で乗り越え質的に新しいものを生み出すこと。折りたたみスマホは「大画面という利点」を保ちながら「持ち運びにくさという欠点」を克服した真の合（アウフヘーベン）。他の選択肢は単なる妥協・折衷（足して2で割る）にすぎない。"
+          },
+          {
+            question: "ベンサムが自然的・政治的・道徳的・宗教的の4つとした、人間の利己的な行動を規制するものを何というか。",
+            choices: ["刑罰", "制裁", "断罪", "反省"],
+            correctIndex: 1,
+            explanation: "ベンサムは人間の利己的行動を規制するものを「制裁（サンクション）」とし、自然的・政治的・道徳的・宗教的の4つに分類した。"
+          },
+          {
+            question: "ヘーゲルの用語で、矛盾と対立とがより高い次元へ統一されていくことを何というか。",
+            choices: ["テーゼ", "アンチテーゼ", "ジンテーゼ", "アウフヘーベン"],
+            correctIndex: 3,
+            explanation: "矛盾と対立がより高い次元へ統一されることをアウフヘーベン（止揚）という。"
+          },
+          {
+            question: "ある行為が善であるか悪であるかの基準を、その行為が快楽や幸福をもたらすかどうかに求める、倫理的・政治的な考え方を何というか。",
+            choices: ["功利主義", "利己主義", "快楽主義", "幸福主義"],
+            correctIndex: 0,
+            explanation: "個人の快楽の追求（快楽主義）ではなく「倫理的・政治的な考え方」とあるため、社会全体の幸福を問題にする功利主義が適切。"
+          },
+          {
+            question: "自然の世界は、自然法則という「原因」と「結果」の法則の中にあるとする考え方を何というか。",
+            choices: ["因果律", "因果関係", "因果応報", "因果法則"],
+            correctIndex: 0,
+            explanation: "自然界が原因と結果の法則の中にあるとする考え方を因果律という。"
+          },
+          {
+            question: "定言命法としてふさわしい行動は次のうちどれか。",
+            choices: ["自分が財布を落とした時には誰かに拾ってほしいから、自分も人の財布は拾う。", "嘘はついてはいけないが、人のためを思ってあえて優しさで嘘をつく。", "食べ物を粗末にすると罰が当たるから、食べ物は全て残さず食べる。", "どんな場合であっても人を殴ってはいけないので、ボクシングで1発も殴ることなく負けた。"],
+            correctIndex: 3,
+            explanation: "定言命法は「〜だから」という条件（結果への期待や恐れ）なしに、無条件に従うべき普遍的な法則。アウは「〜だから」という条件付き（仮言命法）。イは嘘をつかないという格率に自ら例外を作っており矛盾。エは結果（負けること）に関わらず「殴ってはいけない」という格率を貫いており定言命法にふさわしい。"
+          },
+          {
+            question: "カントが理想とした道徳的共同体のことを何というか。",
+            choices: ["目的の国", "善悪の彼岸", "生活世界の植民地化", "市民社会"],
+            correctIndex: 0,
+            explanation: "カントが理想とした道徳的共同体を目的の国という。"
+          },
+          {
+            question: "ベンサムの説いた功利主義として、最もふさわしいフレーズは次のうちどれか。",
+            choices: ["神の見えざる手", "質的功利主義", "最大多数の最大幸福", "義務論"],
+            correctIndex: 2,
+            explanation: "ベンサムの功利主義を表す言葉が「最大多数の最大幸福」である。"
+          },
+          {
+            question: "ベンサムが説いた4つの制裁のうち、彼が最も重視したものは次のうちどれか。",
+            choices: ["自然的制裁", "法律的制裁", "道徳的制裁", "宗教的制裁"],
+            correctIndex: 1,
+            explanation: "ベンサムは快楽計算に基づいて法律を制定することで、人々の利己的行動を社会全体の利益に一致させられると考え、法律（政治的）制裁を特に重視した。"
+          },
+          {
+            question: "現実社会の様々な要因を頭の中で取り除き、その前提に立って物事を考えるという知的な取り組みを何というか。",
+            choices: ["思考実験", "モデル実験", "人体実験", "動物実験"],
+            correctIndex: 0,
+            explanation: "現実社会の要因を取り除き前提に立って考える知的営みを思考実験という。"
+          },
+          {
+            question: "空想的社会主義のうち、自営工場での労働条件改善には成功したものの、米国での共産村（ニューハーモニー村実験）には失敗したのは誰か。",
+            choices: ["トマス・モア", "サン・シモン", "フーリエ", "オーウェン"],
+            correctIndex: 3,
+            explanation: "自営工場の労働条件改善に成功したが、ニューハーモニー村実験に失敗したのはオーウェンである。"
+          },
+          {
+            question: "マルクスが述べた、「物質を生み出す生産活動」について述べた次の4つの文章のうち、間違っているものを1つ選びなさい。",
+            choices: ["「物質を生み出す生産活動」とはいわゆる経済のことであり、社会の土台である。", "「物質を生み出す生産活動」の上に、「人間の精神活動」が成り立っている。", "生産活動は、社会の持つ「生産力」とそれに応じて決まる「生産関係」からなる。", "「生産力」が増大すると、「生産関係」も変更されるので、闘争は起こらなくなる。"],
+            correctIndex: 3,
+            explanation: "マルクスの唯物史観では、生産力が発展すると既存の生産関係（生産手段の所有関係など）と矛盾を来し、それが階級闘争・革命の原動力になると考える。「闘争が起こらなくなる」は逆で誤り。"
+          },
+          {
+            question: "本来は自分のものであるものが自分の外に立ち、自分に対してよそよそしいものとなることを何というか。",
+            choices: ["除外", "論外", "疎外", "圏外"],
+            correctIndex: 2,
+            explanation: "本来自分のものが自分の外に立ち、よそよそしいものとなることを疎外という。"
+          },
+          {
+            question: "物事の真理を、理論や信念からではなく、行動の結果によって判断すべきだとする思想を何というか。",
+            choices: ["ナルシシズム", "プラグマティズム", "ポリリズム", "バカリズム"],
+            correctIndex: 1,
+            explanation: "真理を理論・信念ではなく行動の結果によって判断する思想をプラグマティズムという。"
+          },
+          {
+            question: "アメリカの哲学者・教育学者で、知性を問題解決能力をもつ創造的知性ととらえ、道具主義をとなえたのは誰か。",
+            choices: ["パース", "ゴードン", "ジェームズ", "デューイ"],
+            correctIndex: 3,
+            explanation: "知性を問題解決能力＝創造的知性ととらえ道具主義を唱えたアメリカの哲学者・教育学者はデューイである。"
+          },
+          {
+            question: "次の文章を読み、下の一連の意見（1〜4）の中から、「帰結主義（功利主義など）」の立場から意見を述べ、マグニフィコ王の政策を肯定的に捉えている人として最も適切なものを一つ選びなさい。\n〔設定〕あらゆる願いが叶うと言われる魔法の王国「ロサス」。この国の王であるマグニフィコ王は、国民が18歳になったら「大切な願い」を王に捧げてもらうという政策をとっています。王に願いを預けた国民は、その願いに関する記憶を失いますが、同時に「願いが叶わないかもしれない」という日々の苦しみや不安からも解放され、平和で幸せに暮らすことができます。しかし、王は国家の安全を脅かす恐れがあると判断した危険な願いは決して叶えず、自分の城に保管し続けます。",
+            choices: ["干川先生「個人の『願い』はその人自身のアイデンティティであり、人格そのものだ。どれほど社会が平和になるとしても、本人の同意を超えてそれを奪い、管理することは、人間を道具のように扱う絶対に許されない悪だ。」", "藤田先生「自分の願いが国を脅かすリスクになるかもしれないとしたら、誰もが『安全な管理』を望むはずだ。自分が王になるか一般市民になるか分からない公平な立場であれば、この管理システムは正当な契約として成立する。」", "東山先生「一部の危険な願いが叶わないとしても、国家全体の治安が守られ、大勢の国民が不安のない平和な生活を最大化できている。結果として社会全体の幸福の総量が増えているのだから、この政策は正しい。」", "高島先生「自分の願いを王に差し出すことが、本当に一人の人間として『誠実』な生き方と言えるだろうか。自分の内なる声に向き合い、困難であっても自らの手で願いを叶えようとする『勇気』こそが、今私たちに求められている。」"],
+            correctIndex: 2,
+            explanation: "東山先生は「社会全体の幸福の総量が増えている」という結果（帰結）に着目し政策を肯定しており、典型的な功利主義的立場。干川先生はカント的な人格尊重（義務論）、藤田先生は社会契約論（無知のヴェール的発想）、高島先生は実存主義的な誠実さ・主体性の立場。"
+          },
+          {
+            question: "人間社会や歴史の基礎にあるのは、人間の物質的生産活動であり、このような経済的な土台の上に、法律・政治・学問・思想などの精神的活動が成り立つという考え方を何というか。",
+            choices: ["唯物史観", "社会主義", "搾取", "絶望"],
+            correctIndex: 0,
+            explanation: "経済的土台の上に精神活動が成り立つという考え方を唯物史観という。"
+          },
+          {
+            question: "以下の実存主義者のうち、キルケゴールの影響を最も強く受けた人としてふさわしい人は誰か。",
+            choices: ["ニーチェ", "ハイデガー", "サルトル", "ヤスパース"],
+            correctIndex: 3,
+            explanation: "キルケゴールとヤスパースはともに「有神論的実存主義」に分類され、限界状況における実存的な自己のあり方を論じた点で系譜がつながる。ニーチェ・ハイデガー・サルトルは「無神論的実存主義」に分類される。"
+          },
+          {
+            question: "キルケゴールの「実存の三段階」について、間違っているものはどれか。",
+            choices: ["美的実存－快楽だけを追い求め、享楽的に生きる。", "社会的実存－個人にとどまることをやめ、共同体の中に自らの存在意義を見出すために生きる。", "倫理的実存－生き方を改め、真剣かつ良心的に生きる。", "宗教的実存－自己の無力・絶望を自覚し、その中で神への情熱的な信仰に生きる。"],
+            correctIndex: 1,
+            explanation: "キルケゴールの実存の三段階は「美的実存」「倫理的実存」「宗教的実存」の3つであり、「社会的実存」という段階はない。また彼の思想は共同体への埋没ではなく「単独者」として神の前に立つことを重視する点でも矛盾する。"
+          },
+          {
+            question: "ニーチェの著書『ツァラトゥストラはかく語りき』の中のフレーズとして最もふさわしいと思われるものはどれか。",
+            choices: ["結婚せよ、君は後悔するだろう。結婚するな、君は後悔するだろう。", "実存は、ただ他なる実存との交わり（コミュニケーション）においてのみ、実存となる。", "現存在の現存在に固有な死への存在とは、一つの先駆である。", "人間とは、乗り越えられるべきある何者かである。"],
+            correctIndex: 3,
+            explanation: "アはキルケゴール（『あれかこれか』）、イはヤスパース（実存的交わり）、ウはハイデガー（死への存在）の思想。"
+          },
+          {
+            question: "永劫回帰の世界で、運命を肯定し、力への意志を取り戻してこれを体現して生きる人のことをニーチェは何と呼んだか。",
+            choices: ["超人", "サイヤ人", "常人", "強人"],
+            correctIndex: 0,
+            explanation: "永劫回帰の世界で運命を肯定し力への意志を体現して生きる人をニーチェは超人と呼んだ。"
+          },
+          {
+            question: "ニーチェのような、一切の価値を否定する立場のことを何というか。",
+            choices: ["バカリズム", "ニヒリズム", "アニミズム", "ポリリズム"],
+            correctIndex: 1,
+            explanation: "一切の価値を否定する立場をニヒリズムという。"
+          },
+          {
+            question: "世間の一員として埋没し、自身が「死への存在」であることを忘却して、本来的なあり方を喪失しているありさまをハイデガーは何と呼んだか。",
+            choices: ["アンパンマン", "スパイダーマン", "アンガージュマン", "ダス・マン"],
+            correctIndex: 3,
+            explanation: "世間に埋没し「死への存在」を忘却した本来性を喪失したあり方をハイデガーはダス・マンと呼んだ。"
+          },
+          {
+            question: "ヤスパースの言う、死や苦悩、闘争、罪など、人間が乗り越えることのできない状況を何というか。",
+            choices: ["絶命状況", "限界状況", "壮絶状況", "終末状況"],
+            correctIndex: 1,
+            explanation: "死・苦悩・闘争・罪など人間が乗り越えられない状況をヤスパースは限界状況と呼んだ。"
+          },
+          {
+            question: "人間はまずこの世に存在し、その後に自分が何であるかを作り上げていく存在であることをサルトルは何と呼んだか。",
+            choices: ["存在は本質に先立つ", "実存は本質に先立つ", "本質は存在に先立つ", "本質は実存に先立つ"],
+            correctIndex: 1,
+            explanation: "人間はまず存在し、後に自分が何であるかを作り上げていくという考えをサルトルは「実存は本質に先立つ」と表現した。"
+          },
+          {
+            question: "ドイツの学者で、フランクフルト学派の第2世代にあたり、「生活世界の植民地化」などを論じたのは誰か。",
+            choices: ["レヴィナス", "ハーバーマス", "アドルノ", "アーレント"],
+            correctIndex: 1,
+            explanation: "フランクフルト学派第2世代で「生活世界の植民地化」を論じた人物はハーバーマスである。"
+          },
+          {
+            question: "レヴィナスについて述べた次の文章のうち、間違っている部分を下線部1〜4の中から1つ選べ。\nレヴィナスはフランスの哲学者で、1親族をホロコーストによって失うという体験から、全体性が組み込むことのできない他者の立場から倫理を考えていくことを主張した。人間は自己の主観を中心とした世界を作り、そこに固執してしまうことで、自己の内に暴力的な2イリアを生み出してしまい、そこから脱出できなくなる。レヴィナスのいう3「他性」とは、他者の持つ、理解できる範囲の「他なるもの」を指していう。4「顔」は他者が立ち現れる場所であり、私たちに道徳的な対応を迫るものである。このように、立ち現れる他者に対して責任を負い続けることが正義であると、レヴィナスは論じた。",
+            choices: ["下線部1", "下線部2", "下線部3", "下線部4"],
+            correctIndex: 2,
+            explanation: "レヴィナスの言う「他性」とは、自己の理解の枠組みに決して回収されない・理解しきれない絶対的な他者性を指す。「理解できる範囲の他なるもの」とする下線部3の説明は、レヴィナス思想の核心（他者の絶対的超越性）と正反対であり誤り。"
+          },
+          {
+            question: "フーコーが批判したものは次のうちどれか。",
+            choices: ["理性中心主義", "西洋中心主義", "法律万能主義", "大衆民主主義"],
+            correctIndex: 0,
+            explanation: "フーコーは近代の「理性」が「狂気」を排除・隔離することで自らを正当化してきた構造（理性中心主義）を批判した（『狂気の歴史』など）。"
+          },
+          {
+            question: "近代人は決して主体的になったのではなく、「規格化の力」に従う従順な臣下的存在になっただけだと主張したのは次のうちだれか。",
+            choices: ["レヴィ＝ストロース", "フーコー", "レヴィナス", "アーレント"],
+            correctIndex: 1,
+            explanation: "近代人は主体的になったのではなく「規格化の力」に従う従順な存在になっただけと主張したのはフーコーである。"
+          },
+          {
+            question: "ハーバーマスの思想としてふさわしくないものはどれか。",
+            choices: ["対話的理性が大切。", "道具的理性が大切。", "批判的理性が大切。", "コミュニケーション的行為が大切。"],
+            correctIndex: 1,
+            explanation: "「道具的理性」はホルクハイマー・アドルノが批判した対象であり、ハーバーマスはむしろそれに対抗して「対話的理性」「コミュニケーション的行為」を重視した。"
+          },
+          {
+            question: "人間を個人としてではなく、社会構造を通して捉え、未開人の思考の研究の一環として、アマゾンの先住民と暮らした経験のある人物は誰か。",
+            choices: ["レヴィ＝ストロース", "フーコー", "アーレント", "ハーバーマス"],
+            correctIndex: 0,
+            explanation: "未開人の思考を研究し、アマゾンの先住民と暮らした経験を持つ人物はレヴィ＝ストロースである。"
+          },
+          {
+            question: "欧米諸国で17〜18世紀に展開された、当時台頭した市民階級による社会変革の動きを何というか。",
+            choices: ["市民革命", "階段革命", "社会革命", "欧米革命"],
+            correctIndex: 0,
+            explanation: "17〜18世紀、市民階級による社会変革の動きを市民革命という。"
+          },
+          {
+            question: "人間が生まれながらにしてもっているとされる権利のことを何というか。生命・自由・平等などが含まれる。",
+            choices: ["生存権", "自然権", "参政権", "天皇大権"],
+            correctIndex: 1,
+            explanation: "生命・自由・平等などを含む、人間が生まれながらに持つ権利を自然権という。"
+          },
+          {
+            question: "人民の信託に反する政府は改変、交代させることができるとする、ロックが主張した権利を何というか。",
+            choices: ["爆発権", "交代権", "反逆権", "抵抗権"],
+            correctIndex: 3,
+            explanation: "政府が人民の信託に反した場合に改変・交代させられるとするロックの権利を抵抗権という。"
+          },
+          {
+            question: "『統治二論』を著したのは誰か。",
+            choices: ["グロティウス", "ホッブズ", "ロック", "ルソー"],
+            correctIndex: 2,
+            explanation: "『統治二論』の著者はロックである。"
+          },
+          {
+            question: "以下の文のうち、ロックの著書からの引用としてふさわしいものを1つ選びなさい。",
+            choices: ["そして人間の生活は、孤独で、貧しく、悲惨で、残酷で、短い。", "人間が国家を組織し、政府の統治下に入る最大の、そして主要な目的は、その財産を保全することにある。", "すべての王は、最初の父親であるアダムの直接の相続人、あるいはその代行者である。", "人間は自由なものとして生まれた、しかし、いたるところで鎖につながれている。"],
+            correctIndex: 1,
+            explanation: "アはホッブズ、ウはフィルマー、エはルソーの言葉。"
+          },
+          {
+            question: "イギリスの政治家で、イギリス国王ジェームズ1世に対して「国王といえども神と法のもとにある」と批判したのは誰か。",
+            choices: ["コーク", "モンテスキュー", "ロック", "リンカーン"],
+            correctIndex: 0,
+            explanation: "ジェームズ1世に「国王といえども神と法のもとにある」と批判した政治家はコークである。"
+          },
+          {
+            question: "イギリスにおける中世以降の慣習法を指し、イギリスの「法の支配」思想の源流となったものを何というか。",
+            choices: ["マグナ＝カルタ", "法の精神", "コモン・ロー", "権利の章典"],
+            correctIndex: 2,
+            explanation: "イギリスの中世以来の慣習法、「法の支配」の源流はコモン・ローである。"
+          },
+          {
+            question: "ジェファーソンらが起草した、生命・自由・幸福追求の権利を天賦のものとし、その権利を保持するために政府が組織されたと説く文書は何か。",
+            choices: ["フランス人権宣言", "アメリカ独立宣言", "バージニア権利章典", "世界人権宣言"],
+            correctIndex: 1,
+            explanation: "ジェファーソンらが起草、生命・自由・幸福追求の権利を天賦とする文書はアメリカ独立宣言である。"
+          },
+          {
+            question: "センセーショナリズムやポピュリズムなどが指摘される、大衆社会における民主主義を何というか。",
+            choices: ["公衆民主主義", "群衆民主主義", "合衆民主主義", "大衆民主主義"],
+            correctIndex: 3,
+            explanation: "センセーショナリズムやポピュリズムが指摘される大衆社会の民主主義を大衆民主主義という。"
+          },
+          {
+            question: "映画『シャッターアイランド』では、四方を海に囲まれた孤島の精神病院で起きた失踪事件を解決するため、連邦保安官のテディが捜査に訪れる。しかし、捜査を進めるうちに、病院側が何か恐ろしい人体実験や隠蔽工作をしているのではないかという疑念に取り憑かれていく。映画の全編を通して、「何がまともな現実で、何が狂った妄想なのか」の境界線が曖昧になり、観客は「社会が規定する『正常』とは一体何なのか」という深い問いを突きつけられる。\nこの映画の持つメッセージ性について、4人の学者が意見を述べている。フーコーはどれか。",
+            choices: ["この映画の本質は、人が耐え難い悲劇（現実）に直面したとき、世間の常識（ひと）に埋没して自分を偽るのではなく、孤高の例外者として神の前で一人どう決断するかという、主体性の回復のドラマとして捉えるべきだ。", "隔離された孤島の病院というシステムは、近代社会が『まとも』という枠組みを絶対視し、そこから外れた他者を『狂気』として社会から排除・隔離し、都合よく管理・支配しようとしてきた構造そのものを象徴的に批判しているといえる。", "作中の主人公が下す究極の選択は、その選択がもたらす『結果の幸福度（快楽）』を最大化するために、あえてどのような認知を選ぶかという帰結主義（功利主義）的な実用性の計算に基づいて評価されるべきだ。", "病院という組織が暴走して個人の人権を侵害しているのであれば、それは立法・行政・司法が互いにチェック・アンド・バランス（抑制と均衡）を果たしていないからだ。必要なのは三権分立による統治組織の再構築である。"],
+            correctIndex: 1,
+            explanation: "「隔離された病院システムが『まとも』を絶対視し、外れた他者を『狂気』として排除・管理する構造そのものを批判する」という視点は、まさにフーコーの権力論・『狂気の歴史』の視点と一致する。アはキルケゴール的（単独者・神の前の主体性）、ウは功利主義的、エはモンテスキュー的（三権分立）。"
+          },
+          {
+            question: "オランダ総督ウィリアム3世とメアリ2世を共同統治者として招き、国王ジェームズ2世を追放し、権利の章典を制定して立憲君主制を確立した革命を何というか。",
+            choices: ["名誉革命", "フランス革命", "独立革命", "ピューリタン革命"],
+            correctIndex: 0,
+            explanation: "ウィリアム3世とメアリ2世を共同統治者に、ジェームズ2世を追放し権利の章典を制定した革命は名誉革命である。"
+          },
+          {
+            question: "以下の市民革命が起きた順番として、正しいものを選びなさい。",
+            choices: ["ピューリタン革命 → 独立革命 → 名誉革命 → フランス革命", "ピューリタン革命 → 名誉革命 → 独立革命 → フランス革命", "ピューリタン革命 → フランス革命 → 名誉戦争 → 独立革命", "ピューリタン革命 → 名誉革命 → フランス革命 → 独立革命"],
+            correctIndex: 1,
+            explanation: "ピューリタン革命(1642〜)→名誉革命(1688)→アメリカ独立革命(1775〜)→フランス革命(1789)の順。"
+          },
+          {
+            question: "「近代自然法の父」としてふさわしい人物は次のうちだれか。",
+            choices: ["グロティウス", "ホッブズ", "ロック", "ルソー"],
+            correctIndex: 0,
+            explanation: "「近代自然法の父」はグロティウスである。"
+          },
+          {
+            question: "以下の文のうち、ホッブズの著書からの引用としてふさわしいものを1つ選びなさい。",
+            choices: ["そして人間の生活は、孤独で、貧しく、悲惨で、残酷で、短い。", "人間が国家を組織し、政府の統治下に入る最大の、そして主要な目的は、その財産を保全することにある。", "すべての王は、最初の父親であるアダムの直接の相続人、あるいはその代行者である。", "人間は自由なものとして生まれた、しかし、いたるところで鎖につながれている。"],
+            correctIndex: 0,
+            explanation: "ホッブズの著書からの引用は「そして人間の生活は、孤独で、貧しく、悲惨で、残酷で、短い。」である。"
+          },
+          {
+            question: "以下の文のうち、ルソーの著書からの引用としてふさわしいものを1つ選びなさい。",
+            choices: ["そして人間の生活は、孤独で、貧しく、悲惨で、残酷で、短い。", "人間が国家を組織し、政府の統治下に入る最大の、そして主要な目的は、その財産を保全することにある。", "すべての王は、最初の父親であるアダムの直接の相続人、あるいはその代行者である。", "人間は自由なものとして生まれた、しかし、いたるところで鎖につながれている。"],
+            correctIndex: 3,
+            explanation: "ルソーの著書からの引用は「人間は自由なものとして生まれた、しかし、いたるところで鎖につながれている。」である。"
+          },
+          {
+            question: "以下の文のうち、フィルマーの著書からの引用としてふさわしいものを1つ選びなさい。",
+            choices: ["そして人間の生活は、孤独で、貧しく、悲惨で、残酷で、短い。", "人間が国家を組織し、政府の統治下に入る最大の、そして主要な目的は、その財産を保全することにある。", "すべての王は、最初の父親であるアダムの直接の相続人、あるいはその代行者である。", "人間は自由なものとして生まれた、しかし、いたるところで鎖につながれている。"],
+            correctIndex: 2,
+            explanation: "フィルマーの著書からの引用は「すべての王は、最初の父親であるアダムの直接の相続人…」である。"
+          },
+          {
+            question: "ホッブズが自然状態において守られなければならないとした権利として最も近しいものは何か。",
+            choices: ["生存権", "自由権", "所有権", "社会権"],
+            correctIndex: 0,
+            explanation: "ホッブズは自然状態における自己保存（生命を守る権利）を重視した。所有権を中心に据えたのはロック。"
+          },
+          {
+            question: "アダム＝スミスの思想として最もふさわしいものはどれか。",
+            choices: ["マグナ＝カルタ", "コモン＝ロー", "アイデンティティ＝クライシス", "レッセ＝フェール"],
+            correctIndex: 3,
+            explanation: "アダム＝スミスの思想として最もふさわしいのはレッセ・フェール（自由放任主義）である。"
+          },
+          {
+            question: "フランスの思想家で、権力の乱用を防ぐため三権分立を主張し、アメリカ合衆国憲法に影響を与えたのは誰か。",
+            choices: ["モンテスキュー", "ロック", "ルソー", "ホッブズ"],
+            correctIndex: 0,
+            explanation: "三権分立を主張し、アメリカ合衆国憲法に影響を与えたフランスの思想家はモンテスキューである。"
+          },
+          {
+            question: "法は国民だけでなく、権力者をも拘束するという意味の言葉としてもっともふさわしいものはどれか。",
+            choices: ["法治主義", "法律万能主義", "法の支配", "人の支配"],
+            correctIndex: 2,
+            explanation: "法が国民だけでなく権力者をも拘束するという意味の言葉は法の支配である。"
+          },
+          {
+            question: "次のうち、アメリカの政治体制として間違っているものはどれか。",
+            choices: ["議院内閣制に比べてより権力分立を重視する大統領制をとっている。", "権力分立が重視されているため、大統領は議会に対して政策を示すことはできない。", "大統領は議会に対して拒否権を発動できる。", "アメリカ大統領選は「winner-take-all」方式と呼ばれる。"],
+            correctIndex: 1,
+            explanation: "権力分立が重視されているとはいえ、大統領は教書（一般教書演説など）を通じて議会に政策を示すことができる。「政策を示すことはできない」は誤り。"
+          },
+          {
+            question: "以下の国のうち、シャドーキャビネットを組織している国はどれか。",
+            choices: ["フランス", "イタリア", "スペイン", "イギリス"],
+            correctIndex: 3,
+            explanation: "シャドーキャビネットを組織している国はイギリスである。"
+          },
+          {
+            question: "中国の議会のことを何というか。",
+            choices: ["最高人民法院", "全国代表人民大会", "タウンミーティング", "国務院"],
+            correctIndex: 1,
+            explanation: "中国の議会は全国人民代表大会（全国代表人民大会）である。"
+          },
+          {
+            question: "基本的人権を保有し、主権の担い手として積極的に政治に参加する人のことを何というか。",
+            choices: ["国民", "臣民", "人民", "市民"],
+            correctIndex: 3,
+            explanation: "基本的人権を保有し、主権の担い手として積極的に政治参加する人を市民という。"
+          }
+        ]
+      },
+      {
+        id: 'civics-ai-words',
+        name: '公共テストに出るワード集',
+        questions: [
+          {
+            question: "カントの倫理学において、行為の道徳的価値は何によって決まるとされるか。",
+            choices: ["行為がもたらす結果の良さ", "行為の動機が善意志に基づくかどうか", "行為が多数の人に幸福をもたらすかどうか", "行為が社会の慣習に合致しているかどうか"],
+            correctIndex: 1,
+            explanation: "アは誤り。結果を重視するのは功利主義（帰結主義）の立場であり、カントの動機説とは異なる。イは正しい。カントは行為の結果ではなく、行為の動機（善意志に基づいているか）によって道徳的価値が決まるとする動機説を説いた。ウは誤り。「最大多数の最大幸福」を掲げるベンサムら功利主義の考え方である。エは誤り。カントは普遍的な道徳法則を重視し、単なる慣習への同調を道徳の基準としない。"
+          },
+          {
+            question: "カントが説いた、誰もが従うべき普遍的で無条件の実践的な規則を何というか。",
+            choices: ["自然法則", "道徳法則", "経験法則", "因果法則"],
+            correctIndex: 1,
+            explanation: "アは誤り。自然法則は自然現象を支配する法則であり、人間の意志とは無関係に成立する。イは正しい。道徳法則は、理性的存在者が自律的に自己に課す普遍的な実践法則である。ウは誤り。経験法則は経験に基づく一般化であり、カントの道徳法則が求める普遍性・必然性を持たない。エは誤り。因果法則は原因と結果の関係を扱う自然科学的な法則である。"
+          },
+          {
+            question: "「もし〇〇したいなら、△△せよ」という条件付きの命令の形式を何というか。",
+            choices: ["定言命法", "仮言命法", "道徳命法", "絶対命法"],
+            correctIndex: 1,
+            explanation: "アは誤り。定言命法は「〜せよ」という無条件の命令であり、条件を伴わない。イは正しい。仮言命法は「もし〜ならば、…せよ」という条件付きの命令であり、カントはこれを道徳的命令とは認めなかった。ウ・エは誤り。カントの用語にこのような名称の命法はない。"
+          },
+          {
+            question: "カントが道徳法則として重視した、条件を伴わず無条件に「〜せよ」と命じる命令の形式を何というか。",
+            choices: ["仮言命法", "実践命法", "定言命法", "条件命法"],
+            correctIndex: 2,
+            explanation: "アは誤り。仮言命法は「もし〜なら…せよ」という条件付きの命令であり、カントはこれを道徳的とは見なさなかった。イ・エは誤り。カントの用語にこのような名称はない。ウは正しい。定言命法は無条件に「〜せよ」と命じる命令であり、カントはこれこそが真の道徳法則の形式であるとした。"
+          },
+          {
+            question: "ヘーゲルが説いた、法（客観的な規範）と道徳（主観的な意志）が統合され、家族・市民社会・国家という共同体において具体的に実現される倫理を何というか。",
+            choices: ["人倫", "自然法", "道徳法則", "実定法"],
+            correctIndex: 0,
+            explanation: "アは正しい。人倫は、法と道徳が統合され、家族・市民社会・国家という共同体の中で具体的に実現される倫理をいう。イは誤り。自然法は人為を超えて存在するとされる普遍的な法であり、ヘーゲルの人倫の概念とは異なる。ウは誤り。道徳法則はカントの用語で、主観的な意志の内面にとどまる規範を指す。エは誤り。実定法は国家によって制定された法であり、人倫の一部（国家の段階）に関係するが、概念そのものではない。"
+          },
+          {
+            question: "「最大多数の最大幸福」を原理とし、行為の善悪を快楽・幸福をもたらす結果によって判断する思想を何というか。",
+            choices: ["義務論", "功利主義", "実存主義", "観念論"],
+            correctIndex: 1,
+            explanation: "アは誤り。義務論は結果ではなく行為の動機や義務を重視する立場で、カントに代表される。イは正しい。功利主義は行為の結果としての快楽・幸福（効用）の最大化を道徳的基準とする思想であり、ベンサムやミルが代表的。ウは誤り。実存主義は個人の主体的な実存のあり方を問う思想である。エは誤り。観念論は精神・観念を実在の根本とする哲学的立場である。"
+          },
+          {
+            question: "ベンサムが説いた、人間の快楽と苦痛をコントロールする4つの力を総称して何というか。",
+            choices: ["四つの徳", "四つの制裁", "四つの原理", "四つの規範"],
+            correctIndex: 1,
+            explanation: "アは誤り。「徳」は主にアリストテレス倫理学などで扱われる概念で、ベンサムの用語ではない。イは正しい。ベンサムは快楽・苦痛を統制する力として「四つの制裁」（物理的・政治的・道徳的・宗教的）を説いた。ウは誤り。ベンサムの功利性の原理と混同しやすいが、「四つの原理」という呼称はない。エは誤り。「規範」という呼び方はベンサムのこの概念には用いられない。"
+          },
+          {
+            question: "「真理とは行動によって検証される、役に立つ考えである」とする、19世紀後半にアメリカで生まれた思想を何というか。",
+            choices: ["実存主義", "功利主義", "プラグマティズム", "唯物論"],
+            correctIndex: 2,
+            explanation: "アは誤り。実存主義は個人の実存や主体的なあり方を問う思想であり、真理の実用性を扱う思想ではない。イは誤り。功利主義は快楽・幸福の最大化を基準とする倫理思想で、プラグマティズムとは源流が異なる。ウは正しい。プラグマティズムはパースに始まり、ジェームズ・デューイらが発展させた、真理を行動の結果・実用性から捉える思想である。エは誤り。唯物論は物質を実在の根本とする哲学的立場であり、真理の実用性とは直接関係しない。"
+          },
+          {
+            question: "デューイが提唱した、知性や思考を「環境に適応するための道具」とみなす考え方を何というか。",
+            choices: ["実用主義", "道具主義", "実存主義", "経験主義"],
+            correctIndex: 1,
+            explanation: "アは誤り。「実用主義」はプラグマティズムの訳語として使われることもあるが、デューイのこの概念の名称ではない。イは正しい。道具主義は、知性・思考を環境への適応や問題解決のための「道具」とみなすデューイの立場である。ウは誤り。実存主義は個人の主体的な実存を問う思想である。エは誤り。経験主義は知識の源泉を経験に求める認識論的立場である。"
+          },
+          {
+            question: "サン＝シモンやオーウェンらが唱えた、資本主義の矛盾を批判しつつも、階級闘争の理論を欠いた初期の社会主義思想を何というか。",
+            choices: ["科学的社会主義", "空想的社会主義", "民主社会主義", "国家社会主義"],
+            correctIndex: 1,
+            explanation: "アは誤り。科学的社会主義はマルクス・エンゲルスが唱えた、階級闘争と唯物史観に基づく社会主義である。イは正しい。空想的社会主義は、サン＝シモン・オーウェンらによる、理想の共同体を構想したが階級闘争の理論を欠いた初期の社会主義思想である。ウは誤り。民主社会主義は議会制民主主義の枠内で社会主義の実現を目指す立場である。エは誤り。国家社会主義は国家による経済統制を重視する思想であり、別の系統である。"
+          },
+          {
+            question: "マルクスが説いた、経済的な生産関係（下部構造）が政治・法律・思想などの上部構造を規定するとする歴史観を何というか。",
+            choices: ["弁証法", "史的唯物論（唯物史観）", "観念論", "実存主義"],
+            correctIndex: 1,
+            explanation: "アは誤り。弁証法はヘーゲルに由来する思考・発展の論理形式であり、マルクスもこれを応用したが、下部構造・上部構造の理論そのものではない。イは正しい。史的唯物論（唯物史観）は、経済的な生産関係（下部構造）が政治・法律・思想などの上部構造を規定するとするマルクスの歴史観である。ウは誤り。観念論は精神・観念を実在の根本とする立場で、マルクスの唯物論とは対立する考え方である。エは誤り。実存主義は個人の主体的なあり方を問う思想であり、社会構造の理論ではない。"
+          },
+          {
+            question: "キルケゴールが、自己が本来あるべき自己になろうとしない状態、あるいはなれない状態として捉えた概念を何というか。",
+            choices: ["疎外", "絶望", "不安", "頽落"],
+            correctIndex: 1,
+            explanation: "アは誤り。疎外は主にヘーゲルやマルクスが用いる概念で、人間が自らの本質から切り離される状態を指す。イは正しい。キルケゴールは、絶望を「死に至る病」と表現し、自己が本来の自己になろうとしない、またはなれない状態と捉えた。ウは誤り。不安はキルケゴールも論じるが、絶望とは異なる概念で、自由の可能性に直面した際の感情を指す。エは誤り。頽落はハイデガーが用いる概念で、世人（ひと）に埋没する非本来的なあり方を指す。"
+          },
+          {
+            question: "キルケゴールが、世間の常識や群衆に埋没せず、神の前にただ一人立つ主体的な人間のあり方として説いた概念を何というか。",
+            choices: ["世人", "単独者", "超人", "現存在"],
+            correctIndex: 1,
+            explanation: "アは誤り。「世人（ひと）」はハイデガーが用いる概念で、日常性に埋没した非本来的な人間のあり方を指す。イは正しい。単独者は、キルケゴールが説いた、群衆に埋没せず神の前に一人で立つ主体的な人間のあり方である。ウは誤り。超人はニーチェが説いた、既存の価値を乗り越え自ら新たな価値を創造する人間像である。エは誤り。現存在（ダーザイン）はハイデガーが用いる、自己の存在を問う人間の存在様式を指す用語である。"
+          },
+          {
+            question: "既存の権威や価値、真理の絶対性が失われ、人生や世界に意味を見出せなくなる思想的立場を何というか。",
+            choices: ["ニヒリズム", "実存主義", "合理主義", "神秘主義"],
+            correctIndex: 0,
+            explanation: "アは正しい。ニヒリズムは既存の価値・権威・真理の絶対性が崩壊し、意味や目的を見失う思想的立場であり、ニーチェが「神は死んだ」という言葉でその到来を宣言した。イは誤り。実存主義はニヒリズムを乗り越えようとする思想の一つとして展開されることが多いが、ニヒリズムそのものとは異なる。ウは誤り。合理主義は理性を知識の根拠とする立場であり、価値の喪失を意味しない。エは誤り。神秘主義は理性を超えた直接的な神との合一体験などを重視する立場である。"
+          },
+          {
+            question: "ニーチェが、キリスト教的な絶対的価値観の崩壊、すなわちニヒリズムの到来を宣言した言葉は何か。",
+            choices: ["「神は死んだ」", "「実存は本質に先立つ」", "「人間は自由の刑に処されている」", "「限界状況」"],
+            correctIndex: 0,
+            explanation: "アは正しい。「神は死んだ」は、キリスト教的な絶対的価値観が崩壊し、ニヒリズムが到来したことをニーチェが宣言した言葉である。イは誤り。「実存は本質に先立つ」はサルトルの言葉であり、人間が本質に先立って存在し、自ら本質を作り出すことを意味する。ウは誤り。「自由の刑に処されている」もサルトルの言葉で、人間が自由であることから逃れられないことを表す。エは誤り。「限界状況」はヤスパースの用語で、死・苦悩・争い・罪など人間が避けられない状況を指す。"
+          },
+          {
+            question: "ニーチェが、ニヒリズムを克服し、既存の価値を乗り越えて自ら新たな価値を創造する理想の人間像として説いた概念を何というか。",
+            choices: ["単独者", "超人", "現存在", "世人"],
+            correctIndex: 1,
+            explanation: "アは誤り。単独者はキルケゴールの概念で、神の前に一人で立つ主体的な人間のあり方を指す。イは正しい。超人（ユーバーメンシュ）は、ニーチェがニヒリズムを克服し、自ら新たな価値を創造する理想の人間像として説いた概念である。ウは誤り。現存在はハイデガーの概念で、自己の存在を問う人間の存在様式を指す。エは誤り。世人（ひと）もハイデガーの概念で、日常性に埋没した非本来的な人間のあり方を指す。"
+          },
+          {
+            question: "ヤスパースが、死・苦悩・争い・罪など、人間の力では避けることも変えることもできない状況として説いた概念を何というか。",
+            choices: ["限界状況", "死への存在", "絶望", "疎外"],
+            correctIndex: 0,
+            explanation: "アは正しい。限界状況とは、死・苦悩・争い・罪など、人間が力によって避けることも変えることもできない、実存が直面せざるを得ない状況をヤスパースが説いたものである。イは誤り。死への存在はハイデガーの概念で、人間が死へ向かう存在であることを自覚することを指す。ウは誤り。絶望はキルケゴールの概念で、自己が本来の自己になれない状態を指す。エは誤り。疎外はヘーゲルやマルクスが用いる概念で、人間が自らの本質から切り離される状態を指す。"
+          },
+          {
+            question: "ヤスパースが、限界状況に直面した人間を包み込み、超越的な存在として人間の理性を超えた根源にあるとした概念を何というか。",
+            choices: ["包括者", "超人", "絶対精神", "一般意志"],
+            correctIndex: 0,
+            explanation: "アは正しい。包括者（ウムグライフェンデ）は、限界状況に直面した人間を包み込む、超越的で人間の理性を超えた根源的な存在としてヤスパースが説いた概念である。イは誤り。超人はニーチェの概念で、既存の価値を乗り越え新たな価値を創造する人間像である。ウは誤り。絶対精神はヘーゲルの概念で、歴史を通じて自己を実現していく理性・精神を指す。エは誤り。一般意志はルソーの概念で、公共の利益を目指す人民全体の意志を指す。"
+          },
+          {
+            question: "ハイデガーが、人間（現存在）は自らがいつか必ず死ぬ存在であることを自覚することで本来的な生き方に至るとした概念を何というか。",
+            choices: ["死への存在", "限界状況", "絶望", "超人"],
+            correctIndex: 0,
+            explanation: "アは正しい。死への存在（死への先駆）とは、人間（現存在）が自らの死の可能性を自覚することで本来的な自己のあり方に至るとするハイデガーの概念である。イは誤り。限界状況はヤスパースの概念で、死を含む避けられない状況全般を指すが、ハイデガーの死への存在とは異なる文脈の用語である。ウは誤り。絶望はキルケゴールの概念で、自己が本来の自己になれない状態を指す。エは誤り。超人はニーチェの概念で、新たな価値を創造する理想の人間像である。"
+          },
+          {
+            question: "サルトルが、人間はまず先に存在し、その後に自らの行動によって自分の本質（あり方）を作り上げていく存在であるとした言葉は何か。",
+            choices: ["神は死んだ", "実存は本質に先立つ", "人間は自由の刑に処されている", "万人の万人に対する闘争"],
+            correctIndex: 1,
+            explanation: "アは誤り。「神は死んだ」はニーチェの言葉で、絶対的価値観の崩壊（ニヒリズムの到来）を意味する。イは正しい。「実存は本質に先立つ」は、人間があらかじめ定められた本質を持たずに存在し、自らの選択と行動によって本質を作り上げていくとするサルトルの中心的なテーゼである。ウは誤り。「人間は自由の刑に処されている」もサルトルの言葉だが、自由から逃れられないことを述べたもので、実存と本質の関係を述べた言葉ではない。エは誤り。「万人の万人に対する闘争」はホッブズの言葉で、自然状態における人間同士の争いを表す。"
+          },
+          {
+            question: "サルトルが、人間は自由であることから逃れられず、自らの行動すべてに責任を負わなければならないことを表した言葉は何か。",
+            choices: ["実存は本質に先立つ", "人間は自由の刑に処されている", "神は死んだ", "対話的理性"],
+            correctIndex: 1,
+            explanation: "アは誤り。「実存は本質に先立つ」もサルトルの言葉だが、人間が本質を後から作り上げる存在であることを述べたもので、自由の責任を述べた言葉ではない。イは正しい。「人間は自由の刑に処されている」は、人間が自由であることを選ぶことも拒むこともできず、その自由に伴うすべての責任を負わねばならないことを表すサルトルの言葉である。ウは誤り。「神は死んだ」はニーチェの言葉で、絶対的価値観の崩壊を意味する。エは誤り。対話的理性はハーバーマスの概念で、自由の刑とは異なる文脈の用語である。"
+          },
+          {
+            question: "ハーバーマスが、対等な立場での自由な討議を通じて合意を形成する理性として重視した概念を何というか。",
+            choices: ["道具的理性", "対話的理性", "批判的理性", "絶対理性"],
+            correctIndex: 1,
+            explanation: "アは誤り。道具的理性はホルクハイマー・アドルノが批判した、目的達成の手段としてのみ用いられる理性であり、ハーバーマスはこれに対抗した。イは正しい。対話的理性（コミュニケーション的理性）は、対等な立場での自由な討議を通じて合意を形成する理性としてハーバーマスが重視した概念である。ウは誤り。批判的理性はフランクフルト学派が重視した、社会の矛盾を批判的に捉える理性であり、対話的理性と関連するが同一の概念ではない。エは誤り。「絶対理性」という呼称はハーバーマスの用語ではない。"
+          },
+          {
+            question: "ハーバーマスの思想としてふさわしくないものはどれか。",
+            choices: ["対話的理性が大切。", "道具的理性が大切。", "批判的理性が大切。", "コミュニケーション的行為が大切。"],
+            correctIndex: 1,
+            explanation: "アは誤り（ふさわしい）。対話的理性はハーバーマスが重視した概念であり、彼の思想として適切。イは正しい（ふさわしくない）。「道具的理性」はホルクハイマー・アドルノが批判した対象であり、ハーバーマスはむしろそれに対抗して「対話的理性」「コミュニケーション的行為」を重視した。ウは誤り（ふさわしい）。批判的理性はフランクフルト学派全体が重視する概念であり、ハーバーマスの思想とも関連する。エは誤り（ふさわしい）。コミュニケーション的行為はハーバーマスの中心的な概念であり、彼の思想として適切。"
+          },
+          {
+            question: "フランクフルト学派が、社会の支配や矛盾を鋭く見抜き、既存の体制を批判的に捉え直す理性として重視した概念を何というか。",
+            choices: ["道具的理性", "対話的理性", "批判的理性", "実践理性"],
+            correctIndex: 2,
+            explanation: "アは誤り。道具的理性は目的達成の手段としてのみ機能する理性で、フランクフルト学派が批判の対象とした概念である。イは誤り。対話的理性はハーバーマスが重視した、討議を通じた合意形成のための理性である。ウは正しい。批判的理性は、社会の支配構造や矛盾を鋭く見抜き、既存の体制を批判的に捉え直す理性として、フランクフルト学派（ホルクハイマー、アドルノ、ハーバーマスら）が重視した概念である。エは誤り。実践理性はカントの用語で、道徳的な行為を導く理性を指す。"
+          },
+          {
+            question: "国王の権力は神から授けられたものであり、人民はこれに絶対服従すべきであるとする学説を何というか。",
+            choices: ["社会契約説", "王権神授説", "法の支配", "抵抗権"],
+            correctIndex: 1,
+            explanation: "アは誤り。社会契約説は国家の正当性を人々の合意（契約）に求める学説であり、王権神授説とは対立する考え方である。イは正しい。王権神授説は、国王の権力は神から授けられたものであり、人民は絶対服従すべきであるとする学説で、絶対王政を正当化した。ウは誤り。法の支配は、法が国民だけでなく権力者をも拘束するという原則であり、王権神授説とは逆の発想である。エは誤り。抵抗権は、政府が人民の信託に反した場合に人民が政府を改変・交代させられるとする権利で、ロックが主張した。"
+          },
+          {
+            question: "国家の権力の正当性は、人々が自らの自由や権利を守るために互いに結んだ合意（契約）にあるとする学説を何というか。",
+            choices: ["王権神授説", "社会契約説", "自然法思想", "法治主義"],
+            correctIndex: 1,
+            explanation: "アは誤り。王権神授説は国王の権力が神に由来するとする学説で、社会契約説とは正反対の発想である。イは正しい。社会契約説は、国家権力の正当性を人々の合意（契約）に求める学説で、ホッブズ・ロック・ルソーらによって展開された。ウは誤り。自然法思想は人為を超えた普遍的な法の存在を説く思想で、社会契約説の前提となることもあるが同一の概念ではない。エは誤り。法治主義は法に基づいて統治が行われるべきとする原則であり、契約による国家成立の理論そのものではない。"
+          },
+          {
+            question: "ホッブズが、自然状態における人間同士の関係を表した言葉として説いたものはどれか。",
+            choices: ["万人の万人に対する闘争", "一般意志", "対話的理性", "抵抗権"],
+            correctIndex: 0,
+            explanation: "アは正しい。「万人の万人に対する闘争」は、自然状態において各人が自己保存のために互いに争い合う状態を表すホッブズの言葉である。イは誤り。一般意志はルソーの概念で、公共の利益を目指す人民全体の意志を指す。ウは誤り。対話的理性はハーバーマスの概念で、討議による合意形成のための理性を指す。エは誤り。抵抗権はロックが主張した、政府が信託に反した場合に人民が政府を改変・交代させられる権利である。"
+          },
+          {
+            question: "ルソーが説いた、私的な利害を超えて公共の利益を目指す人民全体の意志を何というか。",
+            choices: ["特殊意志", "全体意志", "一般意志", "自然意志"],
+            correctIndex: 2,
+            explanation: "アは誤り。特殊意志は個々人の私的な利害に基づく意志を指し、一般意志とは区別される。イは誤り。全体意志は特殊意志の単なる総和であり、ルソーは一般意志と区別してこれを退けた。ウは正しい。一般意志は、私的な利害を超えて公共の利益を目指す人民全体の意志であり、ルソーが『社会契約論』で説いた中心概念である。エは誤り。「自然意志」という呼称はルソーの用語ではない。"
+          },
+          {
+            question: "1215年にイギリスで制定された、国王の権力を制限し、貴族の権利を確認した文書を何というか。",
+            choices: ["権利の章典", "マグナ＝カルタ", "アメリカ独立宣言", "バージニア権利章典"],
+            correctIndex: 1,
+            explanation: "アは誤り。権利の章典は1689年、名誉革命後に制定された文書で、マグナ＝カルタよりも後の時代のものである。イは正しい。マグナ＝カルタ（大憲章）は1215年に制定され、国王の権力を制限し貴族の権利を確認した、イギリス立憲主義の源流とされる文書である。ウは誤り。アメリカ独立宣言は1776年に採択された、アメリカの独立を宣言する文書である。エは誤り。バージニア権利章典は1776年に制定された、アメリカの人権に関する文書である。"
+          },
+          {
+            question: "権力の濫用を防ぐため、国家の権力を立法・行政・司法などに分割し、それぞれを異なる機関に担わせる原理を何というか。",
+            choices: ["権力の分立", "法の支配", "一般意志", "王権神授説"],
+            correctIndex: 0,
+            explanation: "アは正しい。権力の分立（三権分立）は、権力の濫用を防ぐために国家権力を立法・行政・司法に分割し、それぞれ異なる機関に担わせる原理であり、モンテスキューが体系化した。イは誤り。法の支配は、法が国民だけでなく権力者をも拘束するという原則であり、権力の分割そのものを指す言葉ではない。ウは誤り。一般意志はルソーの概念で、公共の利益を目指す人民全体の意志を指す。エは誤り。王権神授説は国王の権力が神に由来するとする学説であり、権力分立とは対立する発想である。"
+          },
+          {
+            question: "ラッサールが、国家の役割を国防や治安維持など必要最小限にとどめるべきだとする自由放任的な国家観を批判的に呼んだ言葉は何か。",
+            choices: ["福祉国家", "夜警国家", "立憲国家", "社会国家"],
+            correctIndex: 1,
+            explanation: "アは誤り。福祉国家は国民の福祉の充実を積極的な役割とする国家観であり、ラッサールが批判した対象とは逆の方向性である。イは正しい。夜警国家は、国家の役割を国防・治安維持など必要最小限にとどめるべきとする自由放任的な国家観を、ラッサールが批判的に呼んだ言葉である。ウは誤り。立憲国家は憲法に基づいて統治が行われる国家を指し、夜警国家とは異なる観点の概念である。エは誤り。社会国家は福祉国家と近い概念で、国民生活への国家の積極的関与を重視する国家観である。"
+          },
+          {
+            question: "「権力は腐敗する。絶対的権力は絶対に腐敗する」という言葉を残したことで知られるイギリスの歴史家・思想家は誰か。",
+            choices: ["モンテスキュー", "アクトン", "ロック", "ホッブズ"],
+            correctIndex: 1,
+            explanation: "アは誤り。モンテスキューは三権分立を主張した思想家であり、この言葉を残した人物ではない。イは正しい。「権力は腐敗する。絶対的権力は絶対に腐敗する」は、イギリスの歴史家アクトンが残した、権力の集中に対する警句として知られる言葉である。ウは誤り。ロックは『統治二論』の著者で、抵抗権や社会契約説を説いた思想家である。エは誤り。ホッブズは『リヴァイアサン』の著者で、社会契約説の先駆者の一人である。"
+          }
+        ]
+      }
+];
+
+// ------------------------------------------------------------
+// アプリ本体
+// ------------------------------------------------------------
+let quizData = [];
+let currentSetName = '';
+let currentIndex = 0;
+let correctCount = 0;
+let answeredCount = 0;
+let currentStreak = 0;
+let randomizeChoices = false;
+let randomizeQuestionOrder = false;
+// 問題選択の状態を保持する（初期状態はすべて未選択）
+const checkedSetIds = new Set();
+
+const homeScreen = document.getElementById('home-screen');
+const quizContainer = document.getElementById('quiz-container');
+const headerEl = document.querySelector('.header');
+const mobileChoiceBarEl = document.getElementById('mobile-choice-bar');
+const quizScreen = document.getElementById('quiz-screen');
+const answerPanel = document.getElementById('answer-panel');
+const resultScreen = document.getElementById('result-screen');
+
+const breadcrumbEl = document.getElementById('breadcrumb');
+breadcrumbEl.addEventListener('click', (e) => {
+  if (e.target.closest('#breadcrumb-home')) {
+    goHome();
+  }
+});
+const setListEl = document.getElementById('set-list');
+const optionRandomEl = document.getElementById('option-random');
+const optionQuestionRandomEl = document.getElementById('option-question-random');
+const optionDarkModeEl = document.getElementById('option-dark-mode');
+
+// ------------------------------------------------------------
+// ダークモード
+// ------------------------------------------------------------
+(function initDarkMode() {
+  let saved = false;
+  try {
+    saved = localStorage.getItem('darkMode') === 'true';
+  } catch (e) { /* localStorage不可の環境では無視 */ }
+  optionDarkModeEl.checked = saved;
+  document.body.classList.toggle('dark-mode', saved);
+})();
+
+optionDarkModeEl.addEventListener('change', () => {
+  const enabled = optionDarkModeEl.checked;
+  document.body.classList.toggle('dark-mode', enabled);
+  try {
+    localStorage.setItem('darkMode', enabled);
+  } catch (e) { /* localStorage不可の環境では無視 */ }
+});
+const startBtnEl = document.getElementById('start-btn');
+
+const statCorrectEl = document.getElementById('stat-correct');
+const statTotalEl = document.getElementById('stat-total');
+const statRateEl = document.getElementById('stat-rate');
+
+const questionMetaEl = document.getElementById('question-meta');
+const questionTextEl = document.getElementById('question-text');
+const choicesContainerEl = document.getElementById('choices-container');
+
+const answerLabelEl = document.getElementById('answer-label');
+const answerUserTextEl = document.getElementById('answer-user-text');
+const explanationTextEl = document.getElementById('explanation-text');
+const nextBtnEl = document.getElementById('next-btn');
+const homeBtnExplanationEl = document.getElementById('home-btn-explanation');
+
+const finalScoreEl = document.getElementById('final-score');
+const finalSubEl = document.getElementById('final-sub');
+const retryBtnEl = document.getElementById('retry-btn');
+const homeBtnResultEl = document.getElementById('home-btn-result');
+
+const judgeFlashEl = document.getElementById('judge-flash');
+const judgeMarkCorrectEl = document.getElementById('judge-mark-correct');
+const judgeMarkWrongEl = document.getElementById('judge-mark-wrong');
+const judgeStreakEl = document.getElementById('judge-streak');
+
+const choiceLabels = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ'];
+
+// スマホ下部ラベルから直接回答できるようにする
+mobileChoiceBarEl.querySelectorAll('span[data-choice-index]').forEach((label) => {
+  label.addEventListener('click', () => {
+    if (answerPanel.classList.contains('is-open')) return;
+    const index = Number(label.dataset.choiceIndex);
+    const q = quizData[currentIndex];
+    if (!q || index >= q.choices.length) return;
+    handleAnswer(index);
+  });
+});
+
+// ------------------------------------------------------------
+// HOME画面
+// ------------------------------------------------------------
+function renderHome() {
+  breadcrumbEl.innerHTML = '<span class="breadcrumb-home" id="breadcrumb-home">HOME</span>';
+  headerEl.classList.add('home-mode');
+  mobileChoiceBarEl.classList.add('hidden');
+  mobileChoiceBarEl.setAttribute('aria-hidden', 'true');
+  setListEl.innerHTML = '';
+
+  questionSets.forEach((set) => {
+    const isChecked = checkedSetIds.has(set.id);
+
+    const item = document.createElement('div');
+    item.className = isChecked ? 'set-item is-checked' : 'set-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `set-${set.id}`;
+    checkbox.checked = isChecked;
+    checkbox.dataset.setId = set.id;
+    checkbox.addEventListener('change', () => {
+      item.classList.toggle('is-checked', checkbox.checked);
+      if (checkbox.checked) {
+        checkedSetIds.add(set.id);
+      } else {
+        checkedSetIds.delete(set.id);
+      }
+    });
+
+    const label = document.createElement('label');
+    label.setAttribute('for', `set-${set.id}`);
+    label.textContent = `${set.name}(${set.questions.length}問)`;
+
+    item.appendChild(checkbox);
+    item.appendChild(label);
+    setListEl.appendChild(item);
+  });
+}
+
+startBtnEl.addEventListener('click', () => {
+  const checkedBoxes = setListEl.querySelectorAll('input[type="checkbox"]:checked');
+  if (checkedBoxes.length === 0) return;
+
+  // 選択された問題集の問題を結合
+  let combined = [];
+  let combinedNames = [];
+  checkedBoxes.forEach((box) => {
+    const set = questionSets.find((s) => s.id === box.dataset.setId);
+    if (set) {
+      combined = combined.concat(set.questions);
+      combinedNames.push(set.name);
+    }
+  });
+
+  quizData = combined.map((q) => {
+    const cloned = JSON.parse(JSON.stringify(q));
+    // 解説内の「ア・イ・ウ・エ」を、選択肢の元の位置と紐づけて管理する。
+    cloned.originalChoices = [...cloned.choices];
+    cloned.originalCorrectIndex = cloned.correctIndex;
+    cloned.choiceOriginalIndices = cloned.choices.map((_, index) => index);
+    return cloned;
+  });
+  currentSetName = combinedNames.join('・');
+  randomizeChoices = optionRandomEl.checked;
+  randomizeQuestionOrder = optionQuestionRandomEl.checked;
+
+  if (randomizeQuestionOrder) {
+    quizData = shuffleQuestions(quizData);
+  }
+
+  if (randomizeChoices) {
+    quizData = quizData.map((q) => shuffleChoices(q));
+  }
+
+  currentIndex = 0;
+  correctCount = 0;
+  answeredCount = 0;
+  currentStreak = 0;
+  updateStats();
+
+  homeScreen.classList.add('hidden');
+  headerEl.classList.remove('home-mode');
+  quizContainer.classList.remove('hidden');
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  answerPanel.classList.remove('is-open');
+  mobileChoiceBarEl.classList.remove('hidden');
+  mobileChoiceBarEl.setAttribute('aria-hidden', 'false');
+
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function shuffleQuestions(questions) {
+  const shuffled = [...questions];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function shuffleChoices(q) {
+  const originalChoices = q.originalChoices || q.choices;
+  const shuffledIndices = originalChoices.map((_, index) => index);
+
+  for (let i = shuffledIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+  }
+
+  const shuffled = shuffledIndices.map((originalIndex) => originalChoices[originalIndex]);
+  const originalCorrectIndex = q.originalCorrectIndex ?? q.correctIndex;
+
+  return {
+    ...q,
+    choices: shuffled,
+    correctIndex: shuffledIndices.indexOf(originalCorrectIndex),
+    choiceOriginalIndices: shuffledIndices
+  };
+}
+
+function formatExplanation(q) {
+  const originalToCurrent = {};
+  const currentIndices = q.choiceOriginalIndices || q.choices.map((_, index) => index);
+
+  currentIndices.forEach((originalIndex, currentIndex) => {
+    if (choiceLabels[originalIndex]) {
+      originalToCurrent[choiceLabels[originalIndex]] = choiceLabels[currentIndex];
+    }
+  });
+
+  // 「アウフヘーベン」のような通常の単語内のカタカナは対象にせず、
+  // 選択肢ラベルとして独立している「ア・イ・ウ・エ」だけを置換する。
+  return (q.explanation || '').replace(
+    /(?<![ァ-ヶ])([アイウエオカ])(?![ァ-ヶ])/g,
+    (_, label) => originalToCurrent[label] || label
+  );
+}
+
+function goHome() {
+  quizContainer.classList.add('hidden');
+  homeScreen.classList.remove('hidden');
+  answerPanel.classList.remove('is-open');
+  mobileChoiceBarEl.classList.add('hidden');
+  mobileChoiceBarEl.setAttribute('aria-hidden', 'true');
+  renderHome();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ------------------------------------------------------------
+// 問題画面
+// ------------------------------------------------------------
+function updateStats() {
+  const rate = answeredCount === 0 ? 0 : (correctCount / answeredCount) * 100;
+  statCorrectEl.textContent = correctCount;
+  statTotalEl.textContent = answeredCount;
+  statRateEl.textContent = `${rate.toFixed(1)}%`;
+}
+
+function renderQuestion() {
+  const q = quizData[currentIndex];
+
+  breadcrumbEl.innerHTML = `<span class="breadcrumb-home" id="breadcrumb-home">HOME</span> » ${currentSetName} » ${currentIndex + 1}問目`;
+  questionMetaEl.textContent = `第 ${currentIndex + 1} 問`;
+  questionTextEl.textContent = q.question;
+  choicesContainerEl.innerHTML = '';
+
+  q.choices.forEach((choiceText, index) => {
+    const item = document.createElement('div');
+    item.className = 'choice-item';
+
+    const labelBtn = document.createElement('button');
+    labelBtn.type = 'button';
+    labelBtn.className = 'choice-label';
+    labelBtn.textContent = choiceLabels[index];
+    labelBtn.addEventListener('click', () => handleAnswer(index));
+
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 'choice-value';
+    valueSpan.textContent = choiceText;
+    // 文章タッチ:色を薄くする/戻すトグル(回答確定とは無関係)
+    valueSpan.addEventListener('click', () => {
+      valueSpan.classList.toggle('is-dimmed');
+    });
+
+    item.appendChild(labelBtn);
+    item.appendChild(valueSpan);
+    choicesContainerEl.appendChild(item);
+  });
+}
+
+function handleAnswer(selectedIndex) {
+  const q = quizData[currentIndex];
+  const isCorrect = selectedIndex === q.correctIndex;
+
+  answeredCount++;
+  if (isCorrect) {
+    correctCount++;
+    currentStreak++;
+  } else {
+    currentStreak = 0;
+  }
+  updateStats();
+
+  const items = choicesContainerEl.querySelectorAll('.choice-item');
+  items.forEach((item, index) => {
+    const labelBtn = item.querySelector('.choice-label');
+    const valueSpan = item.querySelector('.choice-value');
+    labelBtn.disabled = true;
+    valueSpan.classList.add('is-disabled');
+    valueSpan.classList.remove('is-dimmed');
+    if (index === q.correctIndex) {
+      item.classList.add('is-correct');
+    } else if (index === selectedIndex) {
+      item.classList.add('is-wrong');
+    }
+  });
+
+  playJudgeAnimation(isCorrect);
+  showAnswerPanel(isCorrect, selectedIndex);
+}
+
+function playJudgeAnimation(isCorrect) {
+  judgeMarkCorrectEl.style.display = isCorrect ? 'block' : 'none';
+  judgeMarkWrongEl.style.display = isCorrect ? 'none' : 'block';
+
+  if (isCorrect && currentStreak >= 3) {
+    judgeStreakEl.textContent = `${currentStreak}問連続!`;
+    judgeStreakEl.style.display = 'block';
+  } else {
+    judgeStreakEl.style.display = 'none';
+  }
+
+  judgeFlashEl.className = 'judge-flash ' + (isCorrect ? 'correct' : 'wrong');
+  void judgeFlashEl.offsetWidth;
+  judgeFlashEl.classList.add('is-active');
+  setTimeout(() => {
+    judgeFlashEl.classList.remove('is-active');
+  }, 750);
+}
+
+function showAnswerPanel(isCorrect, selectedIndex) {
+  const q = quizData[currentIndex];
+
+  answerLabelEl.textContent = choiceLabels[q.correctIndex];
+  answerUserTextEl.textContent = `"あなたの解答:${choiceLabels[selectedIndex]}"`;
+  explanationTextEl.textContent = formatExplanation(q);
+
+  nextBtnEl.textContent = (currentIndex === quizData.length - 1) ? '結果を見る' : '次の問題へ';
+
+  // パネルを完全に展開してから、すぐに最下部へのスクロールを開始する。
+  const scrollToBottom = () => {
+    const mobileBar = window.matchMedia('(max-width: 640px)').matches
+      ? mobileChoiceBarEl.offsetHeight
+      : 0;
+    const maxTop = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight + mobileBar + 8
+    );
+
+    window.scrollTo({
+      top: maxTop,
+      behavior: 'smooth'
+    });
+  };
+
+  const onPanelExpanded = (event) => {
+    // max-height の展開完了時だけ実行する
+    if (event.propertyName !== 'max-height') return;
+    answerPanel.removeEventListener('transitionend', onPanelExpanded);
+
+    // レイアウトが確定した直後にスクロール開始
+    requestAnimationFrame(scrollToBottom);
+  };
+
+  answerPanel.addEventListener('transitionend', onPanelExpanded);
+  answerPanel.classList.add('is-open');
+}
+
+nextBtnEl.addEventListener('click', () => {
+  currentIndex++;
+  answerPanel.classList.remove('is-open');
+
+  if (currentIndex >= quizData.length) {
+    quizScreen.classList.add('hidden');
+    mobileChoiceBarEl.classList.add('hidden');
+    mobileChoiceBarEl.setAttribute('aria-hidden', 'true');
+    showResult();
+  } else {
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+function showResult() {
+  breadcrumbEl.innerHTML = `<span class="breadcrumb-home" id="breadcrumb-home">HOME</span> » ${currentSetName} » 結果`;
+  resultScreen.classList.remove('hidden');
+  const total = quizData.length;
+  const rate = Math.round((correctCount / total) * 100);
+  finalScoreEl.textContent = `${correctCount} / ${total} 問正解`;
+  finalSubEl.textContent = `正答率 ${rate}%`;
+}
+
+retryBtnEl.addEventListener('click', () => {
+  currentIndex = 0;
+  correctCount = 0;
+  answeredCount = 0;
+  currentStreak = 0;
+  updateStats();
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  answerPanel.classList.remove('is-open');
+  headerEl.classList.remove('home-mode');
+  mobileChoiceBarEl.classList.remove('hidden');
+  mobileChoiceBarEl.setAttribute('aria-hidden', 'false');
+
+  if (randomizeQuestionOrder) {
+    quizData = shuffleQuestions(quizData);
+  }
+
+  if (randomizeChoices) {
+    quizData = quizData.map((q) => shuffleChoices(q));
+  }
+
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+homeBtnExplanationEl.addEventListener('click', goHome);
+homeBtnResultEl.addEventListener('click', goHome);
+
+// 初期表示
+renderHome();
+</script>
+
+</body>
+</html>
