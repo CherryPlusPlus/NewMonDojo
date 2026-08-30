@@ -95,6 +95,7 @@
     font-size: 24px;
     font-weight: 700;
     margin: 0;
+    cursor: pointer;
   }
   .header-logo {
     color: var(--color-accent);
@@ -543,15 +544,23 @@
 
   /* スマホ対応 */
   @media (max-width: 640px) {
-    #app { padding: 8px 8px 44px; }
+    #app { padding: 8px 8px 0; }
     .header-title { font-size: 20px; }
+
+    .remaining-count {
+      font-size: inherit;
+    }
+
+    .question-meta-row {
+      width: 100%;
+    }
     .header.home-mode .header-title { font-size: 40px; }
 
     /* スマホでは問題文・選択肢・解説文を問題文の80%サイズに統一 */
     .question-text,
     .choice-value,
     .explanation-box {
-      font-size: 12.8px;
+      font-size: 14.3px;
     }
 
     /* 背景枠の余白を現在の半分に縮小 */
@@ -609,6 +618,14 @@
       padding: 10px 12px;
     }
 
+    .answer-panel {
+      padding-bottom: 84px;
+    }
+
+    .panel-actions {
+      margin-bottom: 0;
+    }
+
     .judge-mark { width: 110px; height: 110px; }
   }
   .wrong-retry-btn {
@@ -635,6 +652,64 @@
     background: rgb(230, 160, 0) !important;
   }
 
+
+
+  /* 解説文内の選択記号：正しい記号は緑、誤った記号は赤 */
+  .explanation-box .explanation-choice-label.correct-choice {
+    font-weight: 700;
+    color: var(--color-correct);
+  }
+
+  .explanation-box .explanation-choice-label.wrong-choice {
+    font-weight: 700;
+    color: var(--color-wrong);
+  }
+
+  .explanation-box .explanation-choice-label {
+    font-weight: 700;
+  }
+
+
+  .question-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .question-meta-row .question-meta,
+  .question-meta-row .remaining-count {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .remaining-count {
+    color: var(--color-text-sub);
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+
+  /* 解説内の正解記号を特に目立たせる */
+  .explanation-box .explanation-choice-label.correct-choice {
+    color: var(--color-correct);
+    font-weight: 800;
+    background: rgba(34, 197, 94, 0.14);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: 4px;
+    padding: 1px 4px;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+
+  .explanation-box .explanation-choice-label.wrong-choice {
+    color: var(--color-wrong);
+    font-weight: 700;
+  }
+
 </style>
 </head>
 <body>
@@ -646,7 +721,7 @@
   </div>
 
   <div class="header">
-    <h1 class="header-title">
+    <h1 class="header-title" id="header-title" role="button" tabindex="0" aria-label="HOMEへ戻る">
       <span class="header-logo">◤</span>New問道場
     </h1>
   </div>
@@ -688,10 +763,12 @@
       正解数 <strong id="stat-correct">0</strong> / <strong id="stat-total">0</strong> 問中
       <span class="divider">|</span>
       正答率 <strong id="stat-rate">0.0%</strong>
+      <span class="divider">|</span>
+      残り <strong id="remaining-count">0</strong> 問
     </div>
 
     <div id="quiz-screen">
-      <p class="question-meta" id="question-meta">第 1 問</p>
+      <div class="question-meta-row"><p class="question-meta" id="question-meta">第 1 問</p></div>
       <p class="question-text" id="question-text"></p>
 
       <div class="choices" id="choices-container"></div>
@@ -709,7 +786,6 @@
 
       <div class="panel-actions">
         <button class="next-btn" id="next-btn">次の問題へ</button>
-        <button class="home-link-btn" id="home-btn-explanation">HOMEへ戻る</button>
       </div>
     </div>
 
@@ -1371,8 +1447,18 @@ const answerPanel = document.getElementById('answer-panel');
 const resultScreen = document.getElementById('result-screen');
 
 const breadcrumbEl = document.getElementById('breadcrumb');
+const headerTitleEl = document.getElementById('header-title');
+
 breadcrumbEl.addEventListener('click', (e) => {
   if (e.target.closest('#breadcrumb-home')) {
+    goHome();
+  }
+});
+
+headerTitleEl.addEventListener('click', goHome);
+headerTitleEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
     goHome();
   }
 });
@@ -1407,6 +1493,7 @@ const statTotalEl = document.getElementById('stat-total');
 const statRateEl = document.getElementById('stat-rate');
 
 const questionMetaEl = document.getElementById('question-meta');
+const remainingCountEl = document.getElementById('remaining-count');
 const questionTextEl = document.getElementById('question-text');
 const choicesContainerEl = document.getElementById('choices-container');
 
@@ -1414,8 +1501,6 @@ const answerLabelEl = document.getElementById('answer-label');
 const answerUserTextEl = document.getElementById('answer-user-text');
 const explanationTextEl = document.getElementById('explanation-text');
 const nextBtnEl = document.getElementById('next-btn');
-const homeBtnExplanationEl = document.getElementById('home-btn-explanation');
-
 const finalScoreEl = document.getElementById('final-score');
 const finalSubEl = document.getElementById('final-sub');
 const retryBtnEl = document.getElementById('retry-btn');
@@ -1574,11 +1659,23 @@ function formatExplanation(q) {
     }
   });
 
+  // 元の選択肢記号と、現在表示されている選択肢記号の対応を確認する。
+  // 解説文に書かれている正解・不正解の記号を、
+  // 現在の選択肢の並びに合わせて表示する。
+  const correctLabel = choiceLabels[q.correctIndex];
+
   // 「アウフヘーベン」のような通常の単語内のカタカナは対象にせず、
-  // 選択肢ラベルとして独立している「ア・イ・ウ・エ」だけを置換する。
+  // 独立した「ア・イ・ウ・エ・オ・カ」だけをボールド＋色付きにする。
   return (q.explanation || '').replace(
     /(?<![ァ-ヶ])([アイウエオカ])(?![ァ-ヶ])/g,
-    (_, label) => originalToCurrent[label] || label
+    (_, label) => {
+      const currentLabel = originalToCurrent[label] || label;
+      const className = currentLabel === correctLabel
+        ? 'correct-choice'
+        : 'wrong-choice';
+
+      return `<span class="explanation-choice-label ${className}">${currentLabel}</span>`;
+    }
   );
 }
 
@@ -1607,6 +1704,7 @@ function renderQuestion() {
 
   breadcrumbEl.innerHTML = `<span class="breadcrumb-home" id="breadcrumb-home">HOME</span> » ${currentSetName} » ${currentIndex + 1}問目`;
   questionMetaEl.textContent = `第 ${currentIndex + 1} 問`;
+  remainingCountEl.textContent = Math.max(quizData.length - currentIndex - 1, 0);
   questionTextEl.textContent = q.question;
   choicesContainerEl.innerHTML = '';
 
@@ -1692,7 +1790,7 @@ function showAnswerPanel(isCorrect, selectedIndex) {
 
   answerLabelEl.textContent = choiceLabels[q.correctIndex];
   answerUserTextEl.textContent = `"あなたの解答:${choiceLabels[selectedIndex]}"`;
-  explanationTextEl.textContent = formatExplanation(q);
+  explanationTextEl.innerHTML = formatExplanation(q);
 
   nextBtnEl.textContent = (currentIndex === quizData.length - 1) ? '結果を見る' : '次の問題へ';
 
@@ -1805,7 +1903,6 @@ wrongRetryBtnEl.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-homeBtnExplanationEl.addEventListener('click', goHome);
 homeBtnResultEl.addEventListener('click', goHome);
 
 // 初期表示
