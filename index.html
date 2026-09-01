@@ -268,6 +268,15 @@
     padding: 8px 16px;
   }
 
+  /* 選択肢の文章が長い場合、PCでも縦一列で表示する */
+  .choices.is-stacked {
+    flex-direction: column;
+  }
+  .choices.is-stacked .choice-item {
+    min-width: 0;
+    width: 100%;
+  }
+
   .choice-label {
     flex-shrink: 0;
     width: 34px;
@@ -703,9 +712,6 @@
     border: 1px solid rgba(34, 197, 94, 0.35);
     border-radius: 4px;
     padding: 1px 4px;
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 2px;
   }
 
   .explanation-box .explanation-choice-label.wrong-choice {
@@ -756,7 +762,7 @@
       </div>
 
       <button class="start-btn" id="start-btn">出題開始</button>
-      <p class="ai-disclaimer">問題の作成はAIを使用しており、誤っている場合があります。ご注意ください。</p>
+      <p class="ai-disclaimer">※ 本問題はAIによって作成されており、内容に誤りが含まれる場合があります。</p>
     </div>
   </div>
 
@@ -1667,10 +1673,11 @@ function formatExplanation(q) {
   // 現在の選択肢の並びに合わせて表示する。
   const correctLabel = choiceLabels[q.correctIndex];
 
-  // 「アウフヘーベン」のような通常の単語内のカタカナは対象にせず、
+  // 「アウフヘーベン」「デューイ」のような通常の単語内のカタカナは対象にせず、
   // 独立した「ア・イ・ウ・エ・オ・カ」だけをボールド＋色付きにする。
+  // 長音符「ー」もカタカナ語の一部として扱い、「デューイ」の「イ」等を除外する。
   return (q.explanation || '').replace(
-    /(?<![ァ-ヶ])([アイウエオカ])(?![ァ-ヶ])/g,
+    /(?<![ァ-ヶー])([アイウエオカ])(?![ァ-ヶー])/g,
     (_, label) => {
       const currentLabel = originalToCurrent[label] || label;
       const className = currentLabel === correctLabel
@@ -1710,6 +1717,11 @@ function renderQuestion() {
   remainingCountEl.textContent = Math.max(quizData.length - currentIndex - 1, 0);
   questionTextEl.textContent = q.question;
   choicesContainerEl.innerHTML = '';
+
+  // 選択肢の文章が長い場合は、PC幅でも横に並べず縦一列で表示する
+  const LONG_CHOICE_THRESHOLD = 18;
+  const hasLongChoice = q.choices.some((choiceText) => choiceText.length > LONG_CHOICE_THRESHOLD);
+  choicesContainerEl.classList.toggle('is-stacked', hasLongChoice);
 
   q.choices.forEach((choiceText, index) => {
     const item = document.createElement('div');
